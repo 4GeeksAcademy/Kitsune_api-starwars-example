@@ -36,11 +36,56 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
+# ACÁ EMPIEZAN LOS ENDPOINTS
+
+
+# endpoint para consultar todos los datos de una tabla
 @app.route('/user', methods=['GET'])
 def handle_hello():
 
+    results = User.query.all()
+    users_list = list(map(lambda item: item.serialize(),results))
+
+
     response_body = {
-        "msg": "Hello, this is your GET /user response "
+        "msg": "Hello, this is your GET /user response ",
+        "results": users_list
+    }
+
+    return jsonify(response_body), 200
+
+# endpoint para consultar un dato en una tabla
+@app.route('/user/<int:id>', methods=['GET'])
+def get_user(id):
+    print(id)
+
+    user = User.query.filter_by(id=id).first()
+    print(user.serialize())
+    # results = User.query.all()
+    # users_list = list(map(lambda item: item.serialize(),results))
+
+
+    response_body = {
+        "msg": "Hello, this is your GET /user response ",
+        "result": user.serialize()
+    }
+
+    return jsonify(response_body), 200
+
+
+# endpoint para crear un dato en una tabla
+@app.route('/user', methods=['POST'])
+def create_user():
+
+    body = json.loads(request.data)
+    # json.loads(request.body.decode(encoding='UTF-8'))
+    print(body)
+    user = User(email=body["email"], password=body["password"], is_active=body["is_active"])
+    db.session.add(user)
+    db.session.commit()
+
+    response_body = {
+        "msg": "El usuario ha sido creado",
     }
 
     return jsonify(response_body), 200
