@@ -10,6 +10,7 @@ from utils import APIException, generate_sitemap
 from admin import setup_admin
 from models import db, User
 #from models import Person
+import json
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
@@ -60,13 +61,12 @@ def get_user(id):
     print(id)
 
     user = User.query.filter_by(id=id).first()
-    print(user.serialize())
-    # results = User.query.all()
-    # users_list = list(map(lambda item: item.serialize(),results))
-
+  
+    if user is None:
+        return jsonify({"msg":"Usuario no existe"}), 404
+    
 
     response_body = {
-        "msg": "Hello, this is your GET /user response ",
         "result": user.serialize()
     }
 
