@@ -11,6 +11,7 @@ from admin import setup_admin
 from models import db, User
 #from models import Person
 import json
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
@@ -26,6 +27,10 @@ MIGRATE = Migrate(app, db)
 db.init_app(app)
 CORS(app)
 setup_admin(app)
+# Setup the Flask-JWT-Extended extension
+app.config["JWT_SECRET_KEY"] = "super-secret"  # Change this!
+jwt = JWTManager(app)
+
 
 # Handle/serialize errors like a JSON object
 @app.errorhandler(APIException)
@@ -89,6 +94,37 @@ def create_user():
     }
 
     return jsonify(response_body), 200
+
+# Create a route to authenticate your users and return JWTs. The
+# create_access_token() function is used to actually generate the JWT.
+@app.route("/login", methods=["POST"])
+def login():
+    email = request.json.get("email", None)
+    password = request.json.get("password", None)
+
+    user = User.query.filter_by(email=email).first()
+    # print(user.email)
+
+    if user is None:
+       return jsonify({"msg": "User does not exists"}), 404 
+
+       #        None.email
+    if email != user.email or password != user.password:
+        return jsonify({"msg": "Bad email or password"}), 401
+
+    access_token = create_access_token(identity=email)
+    return jsonify(access_token=access_token)
+
+# Protect a route with jwt_required, which will kick out requests
+# without a valid JWT present.
+@app.route("/profile", methods=["GET"])
+@jwt_required()
+def get_info_profile():
+    # Access the identity of the current user with get_jwt_identity
+    current_user = get_jwt_identity()
+    user = User.query.filter_by(email=current_user).first()
+   
+    return jsonify({"user":user.serialize()}), 200
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
